@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#Step 1: Check if exactly one argument is given or not
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <file.txt>" >&2
+    exit 1
+fi
+
+file="$1"
+
+# Step 2 : Check if the file exists and is readable
+if [ ! -f "$file" ]; then
+    echo "Error: File '$file' not found." >&2
+    exit 1
+fi
+
+#Step 3: Check if file is empty
+if [[ ! -s "$file" ]]; then
+    echo "Error : '$file' is empty" >&2
+    exit 1
+fi
+
+#Step 4: Check if the input is a text file
+if [[ "$file" != *.txt ]]; then
+    echo "Error: '$file' is not a text file" >$2
+    exit 1
+fi
+# Step 5: Read the header line (first line)
+IFS=';' read -r header_line < "$file"
+
+# Step 6:Remove single quotes, non-alphanumeric characters (except spaces/semicolons/slash), trailing semicolon, collapse multiple semicolons, and clean whitespace
+header_line=$(echo "$header_line" | sed "s/'//g" | sed 's/[^a-zA-Z0-9 ;/]//g' | sed 's/;[[:space:]]*$//' | sed 's/[[:space:]]*;[[:space:]]*/;/g' | sed 's/;;*/;/g')
+
+# Step 7: Convert header into array of column names, filtering out empty fields
+IFS=';' read -r -a headers <<< "$header_line"
+# Create a new array with non-empty headers
+declare -a valid_headers
+for header in "${headers[@]}"; do
+    if [ -n "$header" ]; then
+        valid_headers+=("$header")
+    fi
+done
+
+# Step 8: If no valid headers, exit with error
+if [ ${#valid_headers[@]} -eq 0 ]; then
+    echo "Error: No valid column names found in header."
+    exit 1
+fi
+
+# Step 8: Initialize counters
+num_cols=${#valid_headers[@]}
+for ((i=0; i<num_cols; i++)); do
+    counts[i]=0
+done
+
+# Step 9: Read and process each data line
+line_num=0
+while IFS= read -r line; do
+    line_num=$((line_num+1))
+    if [ $line_num -eq 1 ]; then
+        continue  # Skip header
+    fi
+
+    # Remove single quotes, trailing semicolon, and clean the line
+    line=$(echo "$line" | sed "s/'//g" | sed 's/;[[:space:]]*$//' | sed 's/[[:space:]]*;[[:space:]]*/;/g')
+
+    IFS=';' read -r -a fields <<< "$line"
+
+    # Process fields up to the number of headers
+    for ((i=0; i<num_cols; i++)); do
+        value="${fields[i]}"
+        if [ -z "$value" ]; then
+            counts[i]=$((counts[i]+1))
+        fi
+    done
+done < "$file"
+
+# Step 10: Print results in the requested format
+echo "Running empty_cells on the complete dataset, bgg_dataset.txt, the following counts are reported:"
+for ((i=0; i<num_cols; i++)); do
+    printf "%s: %s\n" "${valid_headers[i]}" "${counts[i]}"
+done

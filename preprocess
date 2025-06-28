@@ -1,0 +1,65 @@
+#!/bin/bash
+
+#Step 1: Check if exactly 1 file is sent as an input
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <file.txt>" >&2
+    exit 1
+fi
+
+file="$1"
+
+# Step 2: Validate file 
+#Check if the file exists and is a .txt file
+if [[ ! -f "$file" ]] || [[ ! "$file" =~ \.txt$ ]]; then
+    echo "Error: Input must be a .txt file" >&2
+    exit 1
+fi
+
+#Step 2.2:Check if file is not empty
+if [[ ! -s "$file" ]]; then
+    echo "Error: Input file is empty." >&2
+    exit 1
+fi
+
+
+#Step 3: Find the largest ID in the /ID column (skip header, ignore empty IDs)
+max_id=$(tail -n +2 "$file" | awk -F';' '$1 != "" {print $1}' | sort -nr | head -n 1)
+
+# Initialize next ID for empty IDs
+next_id=$((max_id + 1))
+
+# Step 4: Process the file 
+#Remove non-ASCII characters and CRLF, then process with awk
+cat "$file" | tr -d '\r' | tr -cd '\11\12\15\40-\176' | awk -F';' -v OFS='\t' -v next_id="$next_id" '
+BEGIN {
+    # Store header flag
+    header=1
+}
+{
+    # Handle header line
+    if (header) {
+        # Print header as is, just change separator
+        print
+        header=0
+        next
+    }
+
+    # Process /ID (field 1)
+    if ($1 == "") {
+        $1 = next_id
+        next_id++
+    }
+
+    # Process floating-point fields: Rating Average (field 9), Complexity Average (field 11)
+    # Replace commas with periods if present (e.g., 7,5 -> 7.5)
+    if ($9 != "") {
+        gsub(/[[:punct:]]/, ".", $9)
+    }
+    if ($11 != "") {
+        gsub(/[[:punct:]]/, ".", $11)
+    }
+
+    # Print the transformed line
+    print
+}
+'

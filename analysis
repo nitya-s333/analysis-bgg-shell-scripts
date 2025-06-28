@@ -1,0 +1,145 @@
+#!/bin/bash
+
+#Step 1: Check if exactly 1 file is provided
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $0 <file.tsv>" >&2
+    exit 1
+fi
+
+file="$1"
+
+#Step 2: Validate file
+#Step 2.1: Check if the file exists and is a .tsv file
+if [[ ! -f "$file" ]] || [[ ! "$file" =~ \.(tsv|txt)$ ]]; then
+    echo "Error: Input must be a .tsv file" >&2
+    exit 1
+fi
+
+#Step 2.2: Check if file is not empty
+if [[ ! -s "$file" ]]; then
+    echo "Error: Input file is empty.">&2
+    exit 1
+fi
+
+#Step 3: Process the file with awk
+awk -F'\t' '
+BEGIN {
+    # Initialize variables for mechanics and domains
+    delete mechanics_count
+    delete domains_count
+    # Initialize variables for correlations
+    n1 = 0; sum_x1 = 0; sum_y1 = 0; sum_x1y1 = 0; sum_x1sq = 0; sum_y1sq = 0
+    n2 = 0; sum_x2 = 0; sum_y2 = 0; sum_x2y2 = 0; sum_x2sq = 0; sum_y2sq = 0
+}
+NR == 1 {
+    # Skip header
+    next
+}
+{
+    # Process Mechanics (field 13)
+    if ($13 != "") {
+        split($13, mechanics, ", ")
+        for (i in mechanics) {
+            mech = mechanics[i]
+            if (mech != "") {
+                mechanics_count[mech]++
+            }
+        }
+    }
+
+    # Process Domains (field 14)
+    if ($14 != "") {
+        split($14, domains, ", ")
+        for (i in domains) {
+            dom = domains[i]
+            if (dom != "") {
+                domains_count[dom]++
+            }
+        }
+    }
+
+    # Correlation: Year Published (field 3) vs Rating Average (field 9)
+    if ($3 != "" && $9 != "" && $3 ~ /^[0-9]+$/ && $9 ~ /^[0-9]+(\.[0-9]+)?$/) {
+        x1 = $3
+        y1 = $9
+        n1++
+        sum_x1 += x1
+        sum_y1 += y1
+        sum_x1y1 += x1 * y1
+        sum_x1sq += x1 * x1
+        sum_y1sq += y1 * y1
+    }
+
+    # Correlation: Complexity Average (field 11) vs Rating Average (field 9)
+    if ($11 != "" && $9 != "" && $11 ~ /^[0-9]+(\.[0-9]+)?$/ && $9 ~ /^[0-9]+(\.[0-9]+)?$/) {
+        x2 = $11
+        y2 = $9
+        n2++
+        sum_x2 += x2
+        sum_y2 += y2
+        sum_x2y2 += x2 * y2
+        sum_x2sq += x2 * x2
+        sum_y2sq += y2 * y2
+    }
+}
+#Step 4: Final calculations
+END {
+    # Find most popular mechanic
+    max_mech_count = 0
+    max_mech = ""
+    for (mech in mechanics_count) {
+        if (mechanics_count[mech] > max_mech_count) {
+            max_mech_count = mechanics_count[mech]
+            max_mech = mech
+        }
+    }
+    if (max_mech != "") {
+        printf "The most popular game mechanics is %s found in %d games\n", max_mech, max_mech_count
+    } else {
+        print "No mechanics found"
+    }
+
+    # Find most popular domain
+    max_dom_count = 0
+    max_dom = ""
+    for (dom in domains_count) {
+        if (domains_count[dom] > max_dom_count) {
+            max_dom_count = domains_count[dom]
+            max_dom = dom
+        }
+    }
+    if (max_dom != "") {
+        printf "The most game domain is %s found in %d games\n", max_dom, max_dom_count
+    } else {
+        print "No domains found"
+    }
+
+    # Compute correlation: Year Published vs Rating Average
+    if (n1 > 1) {
+        num = n1 * sum_x1y1 - sum_x1 * sum_y1
+        denom = sqrt((n1 * sum_x1sq - sum_x1 * sum_x1) * (n1 * sum_y1sq - sum_y1 * sum_y1))
+        if (denom != 0) {
+            corr1 = num / denom
+            printf "The correlation between the year of publication and the average rating is %.3f\n", corr1
+        } else {
+            print "Correlation (year vs rating) cannot be computed: denominator is zero"
+        }
+    } else {
+        print "Correlation (year vs rating) cannot be computed: insufficient data"
+    }
+
+    # Compute correlation: Complexity Average vs Rating Average
+    if (n2 > 1) {
+        num = n2 * sum_x2y2 - sum_x2 * sum_y2
+        denom = sqrt((n2 * sum_x2sq - sum_x2 * sum_x2) * (n2 * sum_y2sq - sum_y2 * sum_y2))
+        if (denom != 0) {
+            corr2 = num / denom
+            printf "The correlation between the complexity of a game and its average rating is %.3f\n", corr2
+        } else {
+            print "Correlation (complexity vs rating) cannot be computed: denominator is zero"
+        }
+    } else {
+        print "Correlation (complexity vs rating) cannot be computed: insufficient data"
+    }
+}
+' "$file"
