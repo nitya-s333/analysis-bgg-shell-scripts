@@ -1,73 +1,92 @@
-#Board Game Data Processing Scripts
+readme: |
+  # 🧩 Board Game Data Processing Scripts
 
-This project aims to process and analyse Board Games Geek dataset and answer certain research questions. The data is sourced from Kaggle and contains 20,000+ board games. Each row represents a game, and columns hold details like ID, name, year published, mechanics, domains, complexity, play time, min age, users rated, BGG rank, owned users, min players, max players and average rating.
+  This project provides a set of shell scripts to clean and analyze the [Board Game Geek dataset](https://www.kaggle.com/datasets/andrewmvd/board-games), which contains information on 20,000+ board games. Each game entry includes metadata such as name, year published, mechanics, domains, complexity, ratings, and more.
 
-Objective: Create 3 shell scripts named empty_cells, preprocess and analysis that answer the following research questions:
-•	What is the most popular domain and most popular mechanics across the set of games. (Appearance in a given game's list counts as 1.)
-•	What is the correlation between publication year and average rating, e.g. newer games being preferred over older ones.
-•	What is the correlation between game complexity and average rating.
+  The goal is to answer several data analysis questions using only standard Unix tools and shell scripting.
 
-Scripts
+  ---
 
-1. empty_cells
+  ## 📌 Research Objectives
 
-This script reads a semicolon-separated text file and counts how many empty cells are in each column.
+  Using cleaned data, the following research questions are addressed:
 
-Input: A text file where:
+  1. **What is the most popular game domain and game mechanic?**  
+     (Appearance in a game's list counts as one occurrence.)
 
-The first line has column names (headers).
-Each line is split by semicolons (;).
-An empty cell is when there's nothing between two semicolons or at the end of a line.
+  2. **Is there a correlation between publication year and average rating?**  
+     (E.g., are newer games generally rated higher?)
 
-Output: Empty cells are counted carefully and displayed as output.
+  3. **Is there a correlation between game complexity and average rating?**
 
-Example: 
-/ID: 16
-Name: 0
-Year Published: 1
-Notes:
+  ---
 
-Note: The script assumes the first line contains the headers.
+  ## 🛠️ Shell Scripts
 
-2. preprocess
-This script takes a raw semicolon-separated file, cleans it up and outputs the cleaned file as a tab-separated file with standardized formatting.
+  ### 1. `empty_cells`
 
-Input: A text file with:
+  This script identifies and counts empty cells in each column of a semicolon-separated dataset.
 
-Semicolon (;) separators.
-Windows-style line endings (CRLF).
-Decimal commas (e.g., 3,14 instead of 3.14).
-Possible non-ASCII characters (like special symbols).
-Some missing or empty IDs in the /ID column.
-Output: A cleaned file (sent to stdout) where:
+  **Input**:
+  - A text file with semicolon (`;`) delimiters.
+  - First line contains column headers.
 
-Semicolons are replaced with tabs (\t).
-Windows CRLF line endings are changed to Unix LF endings.
-Decimal commas are replaced with decimal points (e.g., 3,14 becomes 3.14).
-Non-ASCII characters are removed.
-Missing or empty IDs are replaced with new, unique integer IDs that continue from the largest ID found in the file.
-Notes:
-
-Other empty cells (not IDs) are left as they are.
-The output is a tab-separated file ready for the analysis script.
+  **Output**:
+  - A count of empty cells per column, for example:
+    ```
+    /ID: 16
+    Name: 0
+    Year Published: 1
+    ```
 
 
-3. analysis
-This script analyses the cleaned tab-separated file from preprocess to answer questions about the board game data such as calculating the Pearson correlations for the numerical columns (year published, complexity, and average rating).
+  ### 2. `preprocess`
 
+  Cleans and standardizes the dataset to prepare it for analysis.
 
-Input: The tab-separated file from preprocess is used. 
+  **Input**:
+  - A raw `.txt` file with:
+    - Semicolon delimiters.
+    - Windows-style line endings (CRLF).
+    - European-style decimal commas (e.g., `3,14`).
+    - Non-ASCII characters.
+    - Possibly empty `/ID` fields.
 
-Example Questions:
+  **Output**:
+  - A **tab-separated** cleaned version of the dataset sent to standard output, with:
+    - `;` replaced by tab characters.
+    - Windows line endings converted to Unix (LF).
+    - Decimal commas replaced with `.`.
+    - Non-ASCII characters removed.
+    - Empty `/ID` values filled with new unique integers, continuing from the largest existing ID.
 
-Most popular game mechanics: The mechanics that appear in the most games.
-Most popular game domain: The domain that appears in the most games.
-Correlation between year published and average rating: A number (Pearson correlation) showing how these two are related.
-Correlation between complexity and average rating: A number (Pearson correlation) showing how these two are related.
+  ### 3. `analysis`
 
-Example output:
+  Processes the cleaned tab-separated data and answers the research questions.
 
+  **Input**:
+  - A cleaned `.tsv` file from the `preprocess` script.
+
+  **Output**:
+  - Most popular **game mechanic** and **game domain**.
+  - **Pearson correlation coefficient** between:
+    - Year published and average rating.
+    - Complexity and average rating.
+
+  **Example Output**:
 The most popular game mechanics is Hand Management found in 48 games
 The most game domain is Strategy Games found in 77 games
 The correlation between the year of publication and the average rating is 0.226
 The correlation between the complexity of a game and its average rating is 0.426
+
+## 📚 Notes
+
+- All scripts assume the column order in the dataset remains constant.
+- The analysis assumes input data has already been cleaned.
+- Scripts were tested using the provided class Docker image.
+
+
+## 🧾 References
+
+- Dataset: [Board Games Dataset on Kaggle](https://www.kaggle.com/datasets/andrewmvd/board-games)
+- Pearson correlation: [How to Calculate Correlation Coefficient](https://www.cuemath.com/data/how-to-calculate-correlation-coefficient/)
