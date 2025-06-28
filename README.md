@@ -1,5 +1,4 @@
-# analysis-bgg-shell-scripts
-Board Game Data Processing Scripts
+#Board Game Data Processing Scripts
 
 This project aims to process and analyse Board Games Geek dataset and answer certain research questions. The data is sourced from Kaggle and contains 20,000+ board games. Each row represents a game, and columns hold details like ID, name, year published, mechanics, domains, complexity, play time, min age, users rated, BGG rank, owned users, min players, max players and average rating.
 
