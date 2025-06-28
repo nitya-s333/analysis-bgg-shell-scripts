@@ -1,4 +1,3 @@
-readme: |
   # 🧩 Board Game Data Processing Scripts
 
   This project provides a set of shell scripts to clean and analyze the [Board Game Geek dataset](https://www.kaggle.com/datasets/andrewmvd/board-games), which contains information on 20,000+ board games. Each game entry includes metadata such as name, year published, mechanics, domains, complexity, ratings, and more.
@@ -74,11 +73,12 @@ readme: |
     - Complexity and average rating.
 
   **Example Output**:
-The most popular game mechanics is Hand Management found in 48 games
-The most game domain is Strategy Games found in 77 games
-The correlation between the year of publication and the average rating is 0.226
-The correlation between the complexity of a game and its average rating is 0.426
-
+  ```
+    The most popular game mechanics is Hand Management found in 48 games
+    The most game domain is Strategy Games found in 77 games
+    The correlation between the year of publication and the average rating is 0.226
+    The correlation between the complexity of a game and its average rating is 0.426
+ ```
 ## 📚 Notes
 
 - All scripts assume the column order in the dataset remains constant.
